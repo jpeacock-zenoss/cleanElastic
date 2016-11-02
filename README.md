@@ -1,3 +1,12 @@
+
+```diff
+- WARNING: THIS SCRIPT SHOULD ONLY BE RUN IF `serviced service rm` FAILS
+- TO REMOVE A SERVICE DUE TO ZOOKEEPER ERRORS
+
+- It should be considered a last resort effort to recover a system that cannot
+- be fixed through the regular commands.
+```
+
 ## cleanElastic
 
 These scripts have been written to help remove services from an install with the
