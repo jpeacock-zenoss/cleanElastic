@@ -13,6 +13,9 @@ import subprocess
 import sys
 
 
+versions = ["1.2.[0-9]", "1.1.[0-9]"]
+
+
 # Process helper
 def shell(command):
         p = subprocess.Popen(
@@ -22,6 +25,25 @@ def shell(command):
             stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         return p.returncode, stdout.encode('ascii', 'ignore'), stderr.encode('ascii', 'ignore')
+
+
+# Check the serviced version.  Fail if it isn't whitelisted.
+result = shell("serviced version")
+matched = False
+for line in result[1].split('\n'):
+    if "Version:" in line:
+        ccversion = line
+        break
+
+for version in versions:
+    matcher = "Version: *%s" % version
+    if re.match(matcher, ccversion):
+        matched = True
+        break
+
+if not matched:
+    print "\033[93mControl Center %s is unsupported/untested\033[0m" % ccversion
+    sys.exit(1)
 
 
 # Get the service definitions.
