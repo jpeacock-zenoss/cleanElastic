@@ -63,10 +63,29 @@ def removeService(id):
     shell("curl -XDELETE 'http://localhost:9200/controlplane/service/%s'" % id)
     # Delete the address assignment (if any)
     print "Removing address assignment (if any) for %s.." % id
-    shell("curl -XDELETE 'http://localhost:9200/controlplane/addressassignment/%s'" % id)
+    removeAssignments(id)
     # Remove all service configs for this service.
     print "Removing service configs for %s.." % id
     removeConfigs(id)
+
+
+def removeAssignments(id):
+    """
+    Queries for all address assignments for the given service id.
+    We have to query for assignments, then iterate the document ids to remove them.
+    """
+    query = '{ "query": { "filtered": { "filter": { "bool": { "must": [ {"query": {"wildcard": {"ServiceID": "%s"}}}, {"query": {"wildcard": {"_type": "addressassignment"}}} ] } } } } }' % id
+    cmd = "curl -H \"Content-Type: application/json\" -XGET -d '%s' http://localhost:9200/_search" % query
+    ret = shell(cmd)
+    jsonData = json.loads(ret[1])
+    if not jsonData:
+        exit("Error querying for address assignments")
+    # Get just the hit data
+    jsonData = jsonData["hits"]
+    # For each hit, delete the address assignment
+    for hit in jsonData["hits"]:
+        cmd = "curl -XDELETE 'http://localhost:9200/controlplane/addressassignment/%s'" % hit["_id"]
+        shell(cmd)
 
 
 def removeConfigs(id):
