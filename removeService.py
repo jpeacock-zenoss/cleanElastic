@@ -74,7 +74,7 @@ def removeAssignments(id):
     Queries for all address assignments for the given service id.
     We have to query for assignments, then iterate the document ids to remove them.
     """
-    query = '{ "query": { "filtered": { "filter": { "bool": { "must": [ {"query": {"wildcard": {"ServiceID": "%s"}}}, {"query": {"wildcard": {"_type": "addressassignment"}}} ] } } } } }' % id
+    query = '{ "query": { "filtered": { "filter": { "bool": { "must": [ {"query": {"match": {"ServiceID": "%s"}}}, {"query": {"match": {"_type": "addressassignment"}}} ] } } } } }' % id
     cmd = "curl -H \"Content-Type: application/json\" -XGET -d '%s' http://localhost:9200/_search" % query
     ret = shell(cmd)
     jsonData = json.loads(ret[1])
@@ -93,7 +93,8 @@ def removeConfigs(id):
     Queries for service config matches for this service id, then removes
     each of the configs.
     """
-    cmd = "curl -H \"Content-Type: application/json\" -XGET -d '{\"fields\": [\"_id\"], \"query\": {\"wildcard\": { \"ServicePath\":  \"*/%s\" }}}' http://localhost:9200/_search" % id
+    query = '{ "query": { "filtered": { "filter": { "bool": { "must": [ {"query": {"wildcard": {"ServicePath": "*/%s"}}}, {"query": {"match": {"_type": "svcconfigfile"}}} ] } } } } }' % id
+    cmd = "curl -H \"Content-Type: application/json\" -XGET -d '%s' http://localhost:9200/_search" % query
     ret = shell(cmd)
     jsonData = json.loads(ret[1])
     if not jsonData:
