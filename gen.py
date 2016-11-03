@@ -13,6 +13,8 @@ import subprocess
 import sys
 
 
+# The script won't run unless the serviced version
+# matches one of these.
 versions = ["1.2.[0-9]", "1.1.[0-9]"]
 
 
@@ -25,6 +27,12 @@ def shell(command):
             stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         return p.returncode, stdout.encode('ascii', 'ignore'), stderr.encode('ascii', 'ignore')
+
+
+def yellow(message, *args):
+    if len(args):
+        return "%s%s%s" % ("\033[93m", message % args, "\033[0m")
+    return "%s%s%s" % ("\033[93m", message, "\033[0m")
 
 
 # Check the serviced version.  Fail if it isn't whitelisted.
@@ -42,7 +50,7 @@ for version in versions:
         break
 
 if not matched:
-    print "\033[93mControl Center %s is unsupported/untested\033[0m" % ccversion
+    print yellow("Control Center %s is unsupported/untested", ccversion)
     sys.exit(1)
 
 
@@ -191,20 +199,21 @@ def parseElasticContainer():
         if "serviced-isvcs_elasticsearch-serviced" in line:
                 match = re.match("^([0-9a-z]*) ", line)
                 #print "Found elastic container: %s" % match.group(0)
-                run = parseElasticArgs(match.group(0))
-    if not run:
+                runcmd = parseElasticArgs(match.group(0))
+    if not runcmd:
         print "Unable to parse the Elastic args from docker. Is service running?"
         sys.exit(1)
     print ""
     print "Steps to clean services from Elastic:\n"
-    print "  \033[93m1) Stop serviced:\033[0m sudo systemctl stop serviced \033[93m(on all hosts)\033[0m"
-    print "  \033[93m2) run: \033[0m%s\033[0m" % run
-    print "  \033[93m  a) In the container: \033[0mbash /tmp/startElastic.sh \033[93m(wait for 'recovered [1] indices into cluster_state')\033[0m"
-    print "       \033[33m* Note: If you don't see '[1] indices', check to make sure all serviced are stopped and try again\033[0m"
-    print "  \033[93m  b) In the container: \033[0mbash /tmp/removeServices.sh"
-    print "  \033[93m  c) Exit the container: \033[0mexit"
-    print "  \033[93m3) run:\033[0m sudo rm -rf /opt/serviced/var/isvcs/zookeeper \033[33m*for ALL hosts*\033[0m"
-    print "  \033[93m4) Start serviced:\033[0m sudo systemctl start serviced\033[0m \033[93m(master first, then delegates)\033[0m"
+    print yellow("  1) Stop serviced:") + " sudo systemctl stop serviced " + yellow("(on all hosts)")
+    print yellow("  2) Backup isvcs:") + " sudo tar -czvf isvcs.tgz /opt/serviced/var/isvcs " + yellow("(adjust the location of the tgz as needed)")
+    print yellow("  3) run: ") + runcmd
+    print yellow("    a) In the container: ") + "bash /tmp/startElastic.sh " + yellow("(wait for 'recovered [1] indices into cluster_state')")
+    print yellow("       * Note: If you don't see '[1] indices', check to make sure all serviced are stopped and try again")
+    print yellow("    b) In the container: ") + "bash /tmp/removeServices.sh"
+    print yellow("    c) Exit the container: ") + "exit"
+    print yellow("  4) run: ") + "sudo rm -rf /opt/serviced/var/isvcs/zookeeper " + yellow("*for ALL hosts*")
+    print yellow("  5) Start serviced: ") + "sudo systemctl start serviced " + yellow("(master first, then delegates)")
     print ""
 
 
@@ -225,13 +234,13 @@ while True:
     if response.isdigit():
         n = int(response)
         if n < 1 or n > len(items):
-            print '\n\033[93mInvalid index\033[0m\n'
+            print yellow('\nInvalid index')
             continue
         items[n-1].select(not items[n-1].selected)
         continue
     else:
         if response.startswith('quit') or response.startswith('exit') or response == 'q':
-            print '\n\033[93mAborted\033[0m\n'
+            print yellow('\nAborted\n')
             break
         if response == 'p':
             print ""
@@ -251,9 +260,9 @@ while True:
             if fd:
                 fd.close()
             if count == 0:
-                print "\n\033[93mNo services were selected\033[0m"
+                print yellow("\nNo services were selected")
             parseElasticContainer()
             break
-        print '\n\033[93mInvalid selection\033[0m\n'
+        print yellow('\nInvalid selection\n')
 
 
