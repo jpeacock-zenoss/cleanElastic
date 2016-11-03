@@ -110,14 +110,14 @@ You'll be presented with a set of steps to run to perform the cleanup:
 Steps to clean services from Elastic:
 
   1) Stop serviced: sudo systemctl stop serviced (on all hosts)
-  2) run: docker run  -v /opt/serviced/var/isvcs/elasticsearch-serviced/data:/opt/elasticsearch-0.90.9/data -v /opt/serviced/isvcs/resources:/usr/local/serviced/resources -v /tmp/startElastic.sh:/tmp/startElastic.sh -v /home/zenny/
-removeService.py:/tmp/removeService.py -v /tmp/removeServices.sh:/tmp/removeServices.sh -it f18c53e2acb34e266d9d3b595cf7cf998c7efc5248e4d9083ab50776718cc64b bash
+  2) Backup isvcs: sudo tar -czvf isvcs.tgz /opt/serviced/var/isvcs (adjust the location of the tgz as needed)
+  3) run: docker run  -v /home/rphillips/src/europa/opt_serviced/isvcs/resources:/usr/local/serviced/resources -v /home/rphillips/src/europa/opt_serviced/var/isvcs/elasticsearch-serviced/data:/opt/elasticsearch-serviced/data -v /tmp/startElastic.sh:/tmp/startElastic.sh -v /home/rphillips/test/services/removeService.py:/tmp/removeService.py -v /tmp/removeServices.sh:/tmp/removeServices.sh -it ce38a9911378c81ba691769592d057f37fd192e70afea5d9b2fedc9ae1a246b9 bash
     a) In the container: bash /tmp/startElastic.sh (wait for 'recovered [1] indices into cluster_state')
        * Note: If you don't see '[1] indices', check to make sure all serviced are stopped and try again
     b) In the container: bash /tmp/removeServices.sh
     c) Exit the container: exit
-  3) run: sudo rm -rf /opt/serviced/var/isvcs/zookeeper *for ALL hosts*
-  4) Start serviced: sudo systemctl start serviced (master first, then delegates)
+  4) run: sudo rm -rf /opt/serviced/var/isvcs/zookeeper *for ALL hosts*
+  5) Start serviced: sudo systemctl start serviced (master first, then delegates)
 ```
 
 Follow the steps above to remove the services from Control Center.
