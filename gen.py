@@ -55,19 +55,20 @@ if not matched:
 
 
 # Get the service definitions.
-servicesJson = shell("serviced service list -v")
-if servicesJson[0] != 0 or not servicesJson[1]:
-    print "Unable to get the output from 'serviced service list -v'"
+# Note: Hoth has a restriction of 100 services for json output.  Ask for the fields we need, with
+# delimeters that we'll use to parse out the results.
+servicesData = shell("serviced service list --format '{{.Name}}\t{{.ID}}\t{{.ParentServiceID}}\n'")
+if servicesData[0] != 0 or not servicesData[1]:
+    print "Unable to get the output from 'serviced service list -a'"
     sys.exit(1)
 
 # Load the service data.
-servicedefs = json.loads(servicesJson[1])
+servicedefs = filter(None, servicesData[1].split('\n'))
 if len(servicedefs) == 0:
     print "No services loaded from service definition."
     sys.exit(1)
 
 print "Got %d services" % len(servicedefs)
-
 
 class Service(object):
     def __init__(self, name, serviceid, parentid):
@@ -115,7 +116,8 @@ class Service(object):
 # Process the servicedefs into a set of services.
 services = []
 for servicedef in servicedefs:
-    service = Service(servicedef['Name'], servicedef['ID'], servicedef['ParentServiceID'])
+    data = servicedef.split('\t')
+    service = Service(data[0], data[1], data[2])
     services.append(service)
 
 # Find the top level service.
